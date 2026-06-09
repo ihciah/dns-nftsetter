@@ -118,10 +118,7 @@ mod linux_impl {
         loop {
             let recv_len = socket.recv(&mut recv_buf)?;
             if recv_len < 16 {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "incomplete netlink message received",
-                ));
+                return Err(io::Error::other("incomplete netlink message received"));
             }
 
             if let Some(error) = parse_nlmsg_error(&recv_buf[..recv_len]) {

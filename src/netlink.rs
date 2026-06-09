@@ -135,7 +135,7 @@ mod linux_impl {
             }
 
             if sent as usize != msg.len() {
-                return Err(io::Error::new(io::ErrorKind::Other, "incomplete send"));
+                return Err(io::Error::other("incomplete send"));
             }
 
             Ok(())
