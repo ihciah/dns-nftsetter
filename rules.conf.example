@@ -1,0 +1,17 @@
+# Example rules configuration for dns-nftsetter
+# Format: <source_pattern> / <domain> / <nftables_set_name>
+
+# 1. Client-Specific Pair Rules:
+# DNS queries from 192.168.1.100 for *.apple.com (and apple.com) will add the element
+# client_ip . resolved_ip to pair_dynamic set (type ipv4_addr . ipv4_addr)
+# 192.168.1.100 / apple.com / pair_dynamic
+
+# 2. Any-Client Pair Rules:
+# DNS queries from any client for *.google.com will add
+# client_ip . resolved_ip to pair_dynamic set
+# * / google.com / pair_dynamic
+
+# 3. Global Single IP Rules:
+# DNS queries from any client for *.fb.com will add the resolved IP to
+# global_dynamic set directly (type ipv4_addr)
+# *! / fb.com / global_dynamic

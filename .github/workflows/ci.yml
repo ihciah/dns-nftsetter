@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test_and_verify:
+    name: Run Tests and Verify nftables Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev nftables dnsutils
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Run clippy lints
+        run: cargo clippy -- -D warnings
+
+      - name: Run Cargo unit tests
+        run: cargo test --verbose
+
+      - name: Build release binary
+        run: cargo build --release --verbose
+
+      - name: Setup nftables table and set
+        run: |
+          sudo nft add table ip filter
+          sudo nft add set ip filter pair_dynamic '{ type ipv4_addr . ipv4_addr; flags timeout; }'
+
+      - name: Run dns-nftsetter daemon in background
+        run: |
+          echo "* / apple.com / pair_dynamic" > rules.ci.conf
+          sudo ./target/release/dns-nftsetter --config rules.ci.conf --interface any --table filter --family ip --verbose &
+          echo "DAEMON_PID=$!" >> $GITHUB_ENV
+          sleep 2
+
+      - name: Trigger DNS resolutions
+        run: |
+          # Perform DNS resolutions to trigger sniffing and matching rules
+          nslookup www.apple.com || true
+          nslookup apple.com 8.8.8.8 || true
+          sleep 2
+
+      - name: Verify nftables set has been populated
+        run: |
+          echo "=== nftables set contents ==="
+          sudo nft list set ip filter pair_dynamic
+          
+          # Check that 'elements = ' is present in the output
+          sudo nft list set ip filter pair_dynamic | grep -q "elements = "
+          echo "Success: nftables set has been successfully updated by direct netlink socket!"
+
+      - name: Clean up daemon
+        if: always()
+        run: |
+          if [ -n "$DAEMON_PID" ]; then
+            sudo kill $DAEMON_PID || true
+          fi
+
+  nix_checks:
+    name: Verify Nix Build and Flake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Check Nix Flake
+        run: nix flake check
+
+      - name: Build Nix package
+        run: nix build
+

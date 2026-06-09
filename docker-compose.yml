@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  dns-nftsetter:
+    image: ghcr.io/ihciah/dns-nftsetter:latest
+    build: .
+    container_name: dns-nftsetter
+    restart: unless-stopped
+    # Host network mode is required to sniff DNS traffic on the host's interfaces
+    # and communicate with the host's netlink/nftables.
+    network_mode: host
+    # Elevated system capabilities are required to capture raw network packets
+    # and edit kernel nftables.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./rules.conf:/etc/dns-nftsetter/rules.conf:ro
+    command:
+      - --config
+      - /etc/dns-nftsetter/rules.conf
+      # Optional arguments (uncomment to override defaults):
+      # - --interface
+      # - any
+      # - --table
+      # - filter
+      # - --family
+      # - ip
+      # - --verbose
