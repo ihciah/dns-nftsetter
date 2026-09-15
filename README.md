@@ -95,6 +95,24 @@ nix-build default.nix
 nix-shell
 ```
 
+### Nix Binary Cache
+
+Pushes to `main` automatically build and publish the Nix package for
+`x86_64-linux` and `aarch64-linux` to `https://nix-cache.ihc.im`. The workflow
+also supports manual dispatch with `dev`, `rc`, or `prod` cache channels.
+
+For a local publish, provide the cache write token and signing key through the
+environment, then run:
+
+```bash
+NIX_CACHE_PASSWORD="$NIX_CACHE_WRITE_TOKEN" \
+  NIX_CACHE_SECRET_KEY_FILE="$HOME/.config/nix/cache-signing-key.sec" \
+  scripts/build-and-push-nix-cache.sh
+```
+
+The publishing script creates temporary credential and registration files and
+does not store cache credentials in the repository.
+
 ### Standard Cargo
 
 On other Linux distributions (ensure `libpcap-dev` / `libpcap` headers are installed):
