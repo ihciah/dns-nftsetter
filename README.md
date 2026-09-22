@@ -99,7 +99,10 @@ nix-shell
 
 Pushes to `main` automatically build and publish the Nix package for
 `x86_64-linux` and `aarch64-linux` to `https://nix-cache.ihc.im`. The workflow
-also supports manual dispatch with `dev`, `rc`, or `prod` cache channels.
+checks out the latest `master` version of the cache's staging-upload client,
+uploads NAR payloads through temporary R2 staging keys, and publishes narinfo
+metadata only after those uploads complete. It also supports manual dispatch
+with `dev`, `rc`, or `prod` cache channels.
 
 For a local publish, provide the cache write token and signing key through the
 environment, then run:
